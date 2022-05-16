@@ -92,6 +92,10 @@ saml_config - Dict of SAML configuration parameters: (Required)
         # login hooks - build_attrs_list() must be first
         self.login_hooks = [self.__build_attrs_list]
 
+        # after auth hooks - runs at completion of authentication
+        # based on RelayState key
+        self.after_auth_hooks = {}
+
         # Accept responses from IDP initiated requests:
         # default: True
         idp_ok = config.get('idp_ok', True)
@@ -255,6 +259,11 @@ saml_config - Dict of SAML configuration parameters: (Required)
             return ForbiddenError(msg)
 
         # Quo vidas?
+        if 'after' in relay_state:
+            key = relay_state['after'][0]
+            if key in self.after_auth_hooks:
+                return self.after_auth_hooks[key](relayState=relay_state)
+
         if 'next' in relay_state:
             url = relay_state['next'][0]
         else:
